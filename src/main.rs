@@ -10,14 +10,18 @@ use serenity::model::id::{ChannelId};
 
 struct Handler;
 
+
+// データを保持する構造体
 #[derive(Debug)]
 struct Data {
     token: String,
     channel_id: u64,
 }
 
+// 複数からr/wするので
 static GLOBAL_DATA: OnceLock<Arc<Mutex<Data>>> = OnceLock::new();
 
+// ダミーの値で初期化
 fn init_data() {
     let data = Data {
        token: "xxx".to_string(),
@@ -44,12 +48,14 @@ impl EventHandler for Handler {
             
         }
 
-        get_messages(&ctx, msg.channel_id).await;
+        if msg.content == "!dump" {
+            get_messages(&ctx, msg.channel_id).await;
+        }
     }
 
 }
 
-async fn get_messages(ctx: &Context, channel_id: ChannelId) {
+async fn get_messages(ctx: &Context, _channel_id: ChannelId) {
     let data = get_data();
 
     let channel_id_u64 = { 
@@ -58,16 +64,18 @@ async fn get_messages(ctx: &Context, channel_id: ChannelId) {
     };
 
     let channel_id = ChannelId::new(channel_id_u64);
+
+    const MSG_NUM: usize = 25;
     
     // 直近からとるのでafterは使わない
-    let builder = GetMessages::new().limit(25);
+    let builder = GetMessages::new().limit(MSG_NUM as u8);
 
     // Vectorでかえってくる
     let messages = channel_id.messages(&ctx.http, builder).await.unwrap();
 
-
-    println!("first: {:?}", messages.get(0));
-    println!("second: {:?}", messages.get(1));
+    for i in 0..MSG_NUM {
+        println!("MSG: {:?}", messages.get(i).unwrap().content);
+    }
 
 }
 
