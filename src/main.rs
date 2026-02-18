@@ -1,6 +1,7 @@
 use std::env;
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
+use sqlx::PgPool;
 
 use serenity::async_trait;
 use serenity::model::channel::Message;
@@ -129,7 +130,23 @@ async fn init() {
 
 #[tokio::main]
 async fn main() {
-    init_data();
-    init().await;
+    //init_data();
+    //init().await;
 
+    dotenvy::dotenv().ok();
+    let db_url = std::env::var("DATABASE_URL").unwrap();
+    let pool = PgPool::connect(&db_url).await.unwrap();
+
+    println!("DB connected!");
+
+    sqlx::query(
+        "INSERT INTO message_logs (guild_id, channel_id, author_id, content)
+         VALUES ($1, $2, $3, $4)"
+    )
+    .bind(1_i64)
+    .bind(2_i64)
+    .bind(3_i64)
+    .bind("hello postgres")
+    .execute(&pool)
+    .await.unwrap();
 }
