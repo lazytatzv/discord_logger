@@ -31,6 +31,9 @@ fn init_data() {
     GLOBAL_DATA.set(Arc::new(Mutex::new(data))).unwrap();
 }
 
+// データにアクセス
+// mutexなのでかならずlockをとること
+// スコープに注意
 fn get_data() -> Arc<Mutex<Data>> {
     GLOBAL_DATA.get().unwrap().clone()
 }
@@ -40,6 +43,13 @@ fn get_data() -> Arc<Mutex<Data>> {
 #[async_trait]
 impl EventHandler for Handler {
     async fn message(&self, ctx: Context, msg: Message) {
+
+        // bot自身の発言は除外
+        if msg.author.bot {
+            return;
+        }
+
+        // pingチェック
         if msg.content == "!ping" {
             if let Err(why) = msg.channel_id.say(&ctx.http, "Pong!").await {
                 println!("Error sending message: {why:?}");
